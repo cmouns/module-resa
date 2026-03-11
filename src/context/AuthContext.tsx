@@ -1,3 +1,12 @@
-export default function AuthContext() {
-  return <nav>AuthContext</nav>;
+import { createContext } from 'react';
+import type { User } from '@supabase/supabase-js';
+import type { Profil } from '../types/database';
+
+export interface AuthContextType {
+  user: User | null;
+  profil: Profil | null;
+  loading: boolean;
+  logout: () => Promise<void>;
 }
+
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
