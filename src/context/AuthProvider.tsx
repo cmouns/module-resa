@@ -7,64 +7,96 @@ import type { User } from '@supabase/supabase-js';
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profil, setProfil] = useState<Profil | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const fetchProfil = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.from('profils').select('*').eq('id', userId).single();
-      if (error) throw error;
-      setProfil(data as Profil);
-    } catch (error) {
-      console.error(error);
-      setProfil(null);
-    }
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (session?.user) {
-          setUser(session.user);
-          await fetchProfil(session.user.id);
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error || !data.session) {
+          await supabase.auth.signOut().catch(() => {});
+          localStorage.clear();
+          setUser(null);
+          setProfil(null);
+          setLoading(false);
+          return;
         }
+
+        setUser(data.session.user);
+
+        const { data: profilData, error: profilError } = await supabase
+          .from('profils')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (profilData && !profilError) {
+          setProfil(profilData as Profil);
+        } else {
+          setProfil(null);
+        }
+
       } catch (error) {
-        console.error(error);
-        await supabase.auth.signOut();
+        console.error("Erreur d'initialisation auth:", error);
+        localStorage.clear();
         setUser(null);
         setProfil(null);
       } finally {
         setLoading(false);
       }
     };
-    
-    checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await fetchProfil(session.user.id);
-      } else {
+    initializeAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        localStorage.clear();
         setUser(null);
         setProfil(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      setUser(session.user);
+
+      try {
+        const { data: profilData } = await supabase
+          .from('profils')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        setProfil((profilData as Profil) || null);
+      } catch (error) {
+        console.error("Erreur changement auth:", error);
+        setProfil(null);
+      } finally {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  const logout = async () => { 
-    await supabase.auth.signOut(); 
+  const logout = async () => {
+    await supabase.auth.signOut().catch(() => {});
+    localStorage.clear();
     setUser(null);
     setProfil(null);
   };
 
   return (
     <AuthContext.Provider value={{ user, profil, loading, logout }}>
-      {!loading && children}
+      {loading ? (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

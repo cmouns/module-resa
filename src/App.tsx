@@ -1,25 +1,33 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 import Navbar from './components/layout/Navbar';
-import Catalogue from './pages/Catalogue';
+import Footer from './components/layout/Footer';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import './App.css';
+import DashboardAdmin from './pages/admin/DashboardAdmin';
+import VehiculeDetail from './pages/VehiculeDetail';
+import DashboardClient from './pages/DashboardClient';
+import MentionsLegales from './pages/MentionsLegales';
 
 export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
           <Navbar />
-          <Routes>
-            {/* Si l'URL est /, on affiche le Catalogue */}
-            <Route path="/" element={<Catalogue />} />
-            {/* Si l'URL est /login, on affiche le Login */}
-            <Route path="/login" element={<Login />} />
-            {/* Si l'URL est /register, on affiche le Register */}
-            <Route path="/register" element={<Register />} />
-          </Routes>
+          <main className="grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/admin" element={<DashboardAdmin />} />
+              <Route path="/vehicule/:id" element={<VehiculeDetail />} />
+              <Route path="/dashboard" element={<DashboardClient />} />
+              <Route path="/mentions-legales" element={<MentionsLegales />} />
+            </Routes>
+          </main>
+          <Footer />
         </div>
       </Router>
     </AuthProvider>
