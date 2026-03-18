@@ -3,20 +3,31 @@ import { Link } from 'react-router-dom';
 import { Car, CreditCard, Clock, ArrowRight } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
-interface Vehicule {
+/**
+ * Interface spécifique pour la page d'accueil.
+ */
+interface VehiculeVitrine {
   id: number;
   marque: string;
   modele: string;
   prix_jour: number;
   image_url: string | null;
   statut: string;
-  categories: { libelle: string } | null;
+  categories: { libelle: string } | { libelle: string }[] | null;
 }
 
+/**
+ * Page d'accueil publique de l'application.
+ * Affiche le catalogue des véhicules disponibles.
+ */
 export default function HomePage() {
-  const [vehicules, setVehicules] = useState<Vehicule[]>([]);
+  const [vehicules, setVehicules] = useState<VehiculeVitrine[]>([]);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Récupère la liste restreinte des véhicules depuis la base de données.
+   * Filtre automatiquement les véhicules déjà loués.
+   */
   const fetchCatalogue = async () => {
     try {
       setLoading(true);
@@ -35,9 +46,10 @@ export default function HomePage() {
         .order('id', { ascending: false });
 
       if (error) throw error;
-      setVehicules(data as unknown as Vehicule[]);
+      
+      setVehicules(data as VehiculeVitrine[]);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors du chargement du catalogue :", error);
     } finally {
       setLoading(false);
     }
@@ -61,7 +73,7 @@ export default function HomePage() {
             href="#catalogue"
             className="inline-flex items-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-blue-600 bg-white hover:bg-gray-50 transition-colors"
           >
-            Voir nos véhicules <ArrowRight className="ml-2 h-5 w-5" />
+            Voir nos véhicules <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
           </a>
         </div>
       </header>
@@ -71,21 +83,21 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div className="flex flex-col items-center">
             <div className="bg-blue-100 p-4 rounded-full mb-4 text-blue-600">
-              <Car className="h-8 w-8" />
+              <Car className="h-8 w-8" aria-hidden="true" />
             </div>
             <h3 className="text-lg font-bold text-gray-900">Véhicules récents</h3>
             <p className="text-gray-500 mt-2">Une flotte moderne et parfaitement entretenue.</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="bg-blue-100 p-4 rounded-full mb-4 text-blue-600">
-              <Clock className="h-8 w-8" />
+              <Clock className="h-8 w-8" aria-hidden="true" />
             </div>
             <h3 className="text-lg font-bold text-gray-900">Réservation rapide</h3>
             <p className="text-gray-500 mt-2">Votre véhicule réservé en moins de 2 minutes.</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="bg-blue-100 p-4 rounded-full mb-4 text-blue-600">
-              <CreditCard className="h-8 w-8" />
+              <CreditCard className="h-8 w-8" aria-hidden="true" />
             </div>
             <h3 className="text-lg font-bold text-gray-900">Paiement en agence</h3>
             <p className="text-gray-500 mt-2">Réglez directement sur place lors du retrait.</p>
@@ -102,12 +114,12 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-20" aria-busy="true">
             <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
           </div>
         ) : vehicules.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
-            <Car className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+          <div className="text-center py-20 bg-white rounded-xl border border-gray-200" role="alert">
+            <Car className="mx-auto h-12 w-12 text-gray-300 mb-4" aria-hidden="true" />
             <h3 className="text-lg font-medium text-gray-900">Aucun véhicule disponible</h3>
             <p className="text-gray-500">Revenez un peu plus tard !</p>
           </div>

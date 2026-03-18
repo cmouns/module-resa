@@ -8,51 +8,68 @@ import { Car, ArrowLeft } from 'lucide-react';
 import OptionsSelector from '../components/vehicules/OptionsSelector';
 import ReservationSidebar from '../components/vehicules/ReservationSidebar';
 
+/**
+ * Page de configuration et de réservation d'un véhicule.
+ * Gère le calcul du prix en temps réel et la vérification des disponibilités.
+ */
 export default function VehiculeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  // États liés aux données de la base
   const [vehicule, setVehicule] = useState<Vehicule | null>(null);
   const [optionsDispos, setOptionsDispos] = useState<OptionSupp[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // États liés aux choix du client
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
   useEffect(() => {
     let isMounted = true;
+    
+    // Rempêche le loader de tourner à l'infini si la BDD met trop de temps
     const failsafeTimer = setTimeout(() => {
       if (isMounted) setLoading(false);
     }, 3000);
 
+    /**
+     * Charge les données du véhicule et le catalogue des options en parallèle.
+     */
     const fetchData = async () => {
       try {
         if (!id) return;
+        
+        // Permet d'exécuter les deux requêtes en même temps pour gagner en performance
         const [vehiculeData, optionsData] = await Promise.all([
           vehiculeService.getVehiculeById(Number(id)),
           reservationService.getOptions()
         ]);
+        
         if (isMounted) {
           setVehicule(vehiculeData);
           setOptionsDispos(optionsData || []);
         }
       } catch (error) {
-        console.error(error);
+        console.error("Erreur lors du chargement des détails du véhicule :", error);
       } finally {
         clearTimeout(failsafeTimer);
         if (isMounted) setLoading(false);
       }
     };
+    
     fetchData();
+    
     return () => {
       isMounted = false;
       clearTimeout(failsafeTimer);
     };
   }, [id]);
 
+  // Variables calculées à la volée 
   let erreurDates = '';
   let prixTotal = 0;
 
@@ -62,6 +79,7 @@ export default function VehiculeDetail() {
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
 
+    // Blocage des dates illogiques
     if (end < start) {
       erreurDates = 'La date de retour doit être après la date de départ.';
     } else {
@@ -81,20 +99,28 @@ export default function VehiculeDetail() {
     setSelectedOptions(prev => prev.includes(idOpt) ? prev.filter(x => x !== idOpt) : [...prev, idOpt]);
   };
 
+  /**
+   * Valide et enregistre la réservation après vérification des contraintes.
+   */
   const handleReservation = async () => {
+    // Redirection si l'utilisateur n'est pas authentifié
     if (!user) {
       navigate('/login');
       return;
     }
+    
     setIsSubmitting(true);
 
     try {
+      // Double vérification côté base de données pour éviter le chevauchement
       const isAvailable = await reservationService.checkDisponibilite(Number(id), dateDebut, dateFin);
       if (!isAvailable) {
-        alert('Désolé, ce véhicule est déjà réservé sur ces dates.');
+        alert('Désolé, ce véhicule est déjà réservé sur ces dates. Veuillez modifier votre période.');
         setIsSubmitting(false);
         return;
       }
+      
+      // Création de la réservation et insertion des options
       await reservationService.createReservation({
         id_profil: user.id,
         id_vehicule: Number(id),
@@ -106,13 +132,14 @@ export default function VehiculeDetail() {
       alert('Réservation confirmée avec succès !');
       navigate('/dashboard');
     } catch (error) {
-      console.error(error);
+      console.error("Erreur de traitement de la réservation :", error);
       alert('Une erreur est survenue lors de la réservation.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Affichage du loader pendant la récupération des données
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#F9F9F5]" aria-busy="true">
@@ -121,6 +148,7 @@ export default function VehiculeDetail() {
     );
   }
 
+  // Gestion de l'erreur 404 (Véhicule non trouvé)
   if (!vehicule) {
     return (
       <main className="max-w-7xl mx-auto px-4 py-24 text-center">

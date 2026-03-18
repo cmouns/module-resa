@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { calculerPrixTotal } from './reservationUtils';
 
+/**
+ * Suite de tests unitaires validant la règle de gestion principale (calcul du tarif).
+ * Permet de s'assurer que les modifications futures ne casseront pas la logique financière.
+ */
 describe('Algorithme de calcul de prix de réservation', () => {
+  
+  // Jeu d'essai simulant les options retournées par la base de données
   const optionsDispos = [
     { id: 1, libelle: 'GPS', prix_unitaire: 5 },
     { id: 2, libelle: 'Siège Bébé', prix_unitaire: 10 }

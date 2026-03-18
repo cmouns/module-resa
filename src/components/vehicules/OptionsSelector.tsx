@@ -1,12 +1,19 @@
 import { Shield } from 'lucide-react';
 import type { OptionSupp } from '../../types/database';
 
+/**
+ * Propriétés du sélecteur d'options.
+ * Il reçoit les données et remonte les clics (onToggle) à son parent.
+ */
 interface Props {
   options: OptionSupp[];
   selectedOptions: number[];
   onToggle: (id: number) => void;
 }
 
+/**
+ * Affiche la liste des options supplémentaires (GPS, Siège bébé, etc.).
+ */
 export default function OptionsSelector({ options, selectedOptions, onToggle }: Props) {
   return (
     <fieldset className="pt-8 border-t border-gray-100">
@@ -17,6 +24,7 @@ export default function OptionsSelector({ options, selectedOptions, onToggle }: 
         {options.map((option) => {
           const isSelected = selectedOptions.includes(option.id);
           const checkboxId = `option-${option.id}`;
+          
           return (
             <div 
               key={option.id}

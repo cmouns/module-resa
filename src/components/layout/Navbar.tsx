@@ -3,20 +3,29 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { LogOut, User as UserIcon, Menu, ArrowLeft, LayoutDashboard } from "lucide-react";
 
+/**
+ * Barre de navigation
+ */
 export default function Navbar() {
   const { user, profil, logout } = useAuth();
   const navigate = useNavigate();
+  
   const [isOpen, setIsOpen] = useState(false);
 
+  // Routage dynamique : oriente l'utilisateur vers le bon tableau de bord selon ses privilèges
   const dashboardPath = profil?.role === 'admin' ? '/admin' : '/dashboard';
 
+  /**
+   * Intercepte la demande de déconnexion.
+   * Purge la session via le hook useAuth, ferme le menu mobile, puis redirige vers l'accueil.
+   */
   const handleLogout = async () => {
     try {
       await logout();
       setIsOpen(false);
       navigate("/login");
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de la déconnexion :", error);
     }
   };
 
@@ -34,6 +43,7 @@ export default function Navbar() {
               </Link>
             </div>
 
+            {/* Menu desktop */}
             <div className="hidden md:flex items-center">
               {user ? (
                 <div className="flex items-center space-x-6">
@@ -75,6 +85,7 @@ export default function Navbar() {
               )}
             </div>
 
+            {/* Menu burger  */}
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsOpen(true)}
@@ -89,6 +100,7 @@ export default function Navbar() {
         </div>
       </nav>
 
+      {/* Menu superposé pour affichage Mobile */}
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col md:hidden" role="dialog" aria-modal="true" aria-label="Menu mobile">
           <div className="flex items-center h-14 px-4 border-b border-gray-200 bg-gray-50">

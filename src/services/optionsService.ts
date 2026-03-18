@@ -1,7 +1,16 @@
 import { supabase } from './supabase';
 import type { OptionSupp } from '../types/database';
 
+/**
+ * Service gérant le catalogue des options supplémentaires (Siège bébé, GPS, etc.).
+ */
 export const optionsService = {
+  
+  /**
+   * Récupère la liste de toutes les options disponibles.
+   * Trie automatiquement du moins cher au plus cher pour un affichage logique côté client.
+   * @returns {Promise<OptionSupp[]>} Le tableau des options.
+   */
   async getOptions(): Promise<OptionSupp[]> {
     const { data, error } = await supabase
       .from('options_supp')
@@ -12,7 +21,12 @@ export const optionsService = {
     return data || [];
   },
 
-  async createOption(option: { libelle: string; prix_unitaire: number }) {
+  /**
+   * Crée une nouvelle option supplémentaire.
+   * @param option - Les données de la nouvelle option (libellé et prix unitaire).
+   * @returns {Promise<OptionSupp>} L'option fraîchement créée.
+   */
+  async createOption(option: { libelle: string; prix_unitaire: number }): Promise<OptionSupp> {
     const { data, error } = await supabase
       .from('options_supp')
       .insert([option])
@@ -23,7 +37,13 @@ export const optionsService = {
     return data;
   },
 
-  async updateOption(id: number, option: { libelle?: string; prix_unitaire?: number }) {
+  /**
+   * Met à jour une option existante.
+   * @param id - L'identifiant de l'option à modifier.
+   * @param option - Les nouveaux champs à appliquer (libellé ou prix).
+   * @returns {Promise<OptionSupp>} L'option mise à jour.
+   */
+  async updateOption(id: number, option: { libelle?: string; prix_unitaire?: number }): Promise<OptionSupp> {
     const { data, error } = await supabase
       .from('options_supp')
       .update(option)
@@ -35,7 +55,12 @@ export const optionsService = {
     return data;
   },
 
-  async deleteOption(id: number) {
+  /**
+   * Supprime définitivement une option de la base de données.
+   * La requête échouera (erreur de contrainte) si l'option est déjà liée à une réservation existante.
+   * @param id - L'identifiant de l'option à supprimer.
+   */
+  async deleteOption(id: number): Promise<void> {
     const { error } = await supabase
       .from('options_supp')
       .delete()

@@ -4,19 +4,27 @@ import { categorieService } from '../../services/categorieService';
 import type { Categorie } from '../../types/database';
 import CategorieFormModal from './CategorieFormModal';
 
+/**
+ * Section d'administration permettant la gestion des catégories de véhicules.
+ */
 export default function AdminCategoriesSection() {
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // États de contrôle pour la modale d'édition/création
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categorieToEdit, setCategorieToEdit] = useState<Categorie | null>(null);
 
+  /**
+   * Charge la liste complète des catégories depuis Supabase.
+   */
   const fetchCategories = async () => {
     try {
       setLoading(true);
       const data = await categorieService.getCategories();
       setCategories(data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur de récupération des catégories :", error);
     } finally {
       setLoading(false);
     }
@@ -26,14 +34,18 @@ export default function AdminCategoriesSection() {
     fetchCategories();
   }, []);
 
+  /**
+   * Tente de supprimer une catégorie de la base de données.
+   */
   const handleDelete = async (id: number) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) {
       try {
         await categorieService.deleteCategorie(id);
         setCategories(prev => prev.filter(c => c.id !== id));
       } catch (error) {
-        console.error(error);
-        alert("Impossible de supprimer cette catégorie. Elle est probablement liée à un véhicule.");
+        console.error("Erreur lors de la suppression :", error);
+        // Message d'erreur personnalisé basé sur les contraintes relationnelles de la BDD
+        alert("Impossible de supprimer cette catégorie. Elle est probablement liée à un ou plusieurs véhicules actifs.");
       }
     }
   };
@@ -45,6 +57,7 @@ export default function AdminCategoriesSection() {
           <Tags className="mr-3 h-6 w-6 text-blue-600" aria-hidden="true" />
           Gestion des Catégories
         </h2>
+        {/* Bouton d'ajout, ouvre la modale avec un state nul pour forcer le mode "Création" */}
         <button 
           onClick={() => { setCategorieToEdit(null); setIsModalOpen(true); }}
           className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
@@ -76,6 +89,7 @@ export default function AdminCategoriesSection() {
                       <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{c.libelle}</div></td>
                       <td className="px-6 py-4"><div className="text-sm text-gray-500 line-clamp-1">{c.description || '-'}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {/* Bouton de modification */}
                         <button 
                           onClick={() => { setCategorieToEdit(c); setIsModalOpen(true); }} 
                           className="text-blue-600 hover:text-blue-900 mr-4"

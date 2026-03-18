@@ -4,22 +4,29 @@ import { vehiculeService } from '../../services/vehiculesService';
 import type { Vehicule } from '../../types/database';
 import { Search, Car, Tag, Euro, CalendarDays } from 'lucide-react';
 
+/**
+ * Composant principal affichant la grille du catalogue de véhicules.
+ * Intègre un moteur de recherche réactif (côté client) et un module de filtrage par date.
+ */
 export default function CatalogueGrille() {
   const [vehicules, setVehicules] = useState<Vehicule[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // États gérant les filtres de recherche
   const [searchTerm, setSearchTerm] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
 
+  // Chargement initial des données depuis Supabase
   useEffect(() => {
     const fetchVehicules = async () => {
       try {
         const data = await vehiculeService.getVehicules();
+        // Règle métier : le catalogue public ne montre que les véhicules actuellement libres
         const vehiculesDispos = (data || []).filter(v => v.statut === 'disponible');
         setVehicules(vehiculesDispos);
       } catch (error) {
-        console.error(error);
+        console.error("Erreur lors de la récupération du catalogue :", error);
         setVehicules([]);
       } finally {
         setLoading(false);
@@ -29,12 +36,17 @@ export default function CatalogueGrille() {
     fetchVehicules();
   }, []);
 
+  /**
+   * La liste est recalculée instantanément à chaque frappe de l'utilisateur dans la barre de recherche.
+   * On concatène marque et modèle pour permettre des recherches croisées.
+   */
   const vehiculesFiltres = vehicules.filter(v => 
     `${v.marque} ${v.modele}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <section aria-labelledby="catalogue-title">
+      {/* Barre d'outils de recherche et filtrage */}
       <div className="bg-white rounded-xl shadow-lg p-2 mb-12 border border-gray-100 max-w-4xl mx-auto flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-100">
         
         <div className="flex-1 flex items-center w-full p-2">
@@ -45,6 +57,7 @@ export default function CatalogueGrille() {
             type="text" 
             placeholder="Marque, modèle..." 
             value={searchTerm}
+            // Mise à jour de l'état local à chaque frappe 
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full py-2 bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-400 outline-none"
           />
@@ -57,6 +70,7 @@ export default function CatalogueGrille() {
             <input 
               id="filter-date-debut"
               type="date" 
+              // Blocage des dates antérieures à aujourd'hui
               min={new Date().toISOString().split('T')[0]}
               value={dateDebut}
               onChange={(e) => setDateDebut(e.target.value)}
@@ -77,6 +91,7 @@ export default function CatalogueGrille() {
             <input 
               id="filter-date-fin"
               type="date" 
+              // La date de fin s'adapte à la date de début si elle est saisie
               min={dateDebut || new Date().toISOString().split('T')[0]}
               value={dateFin}
               onChange={(e) => setDateFin(e.target.value)}
@@ -98,6 +113,7 @@ export default function CatalogueGrille() {
         </span>
       </header>
 
+      {/* Affichage des états de la vue : Chargement, Vide, ou Grille de résultats */}
       {loading ? (
         <div className="flex flex-col justify-center items-center py-24" aria-busy="true">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>

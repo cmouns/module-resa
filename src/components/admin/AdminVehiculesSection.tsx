@@ -5,17 +5,28 @@ import { categorieService } from '../../services/categorieService';
 import type { Vehicule, Categorie } from '../../types/database';
 import VehiculeFormModal from './VehiculeFormModal';
 
+/**
+ * Section d'administration permettant la gestion complète du parc automobile.
+ * Intègre des fonctionnalités avancées de filtrage, recherche et tri côté client.
+ */
 export default function AdminVehiculesSection() {
+  // États stockant les données brutes provenant de Supabase
   const [vehicules, setVehicules] = useState<Vehicule[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // États gérant le comportement de la fenêtre modale
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [vehiculeToEdit, setVehiculeToEdit] = useState<Vehicule | null>(null);
 
+  // États gérant la barre d'outils (recherche, filtres, tri)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatut, setFilterStatut] = useState('all');
   const [sortPrix, setSortPrix] = useState('none');
 
+  /**
+   * Récupère les véhicules et les catégories en parallèle pour optimiser le temps de chargement.
+   */
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -26,7 +37,7 @@ export default function AdminVehiculesSection() {
       setVehicules(vehiculesData || []);
       setCategories(categoriesData || []);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur de récupération des données véhicules :", error);
     } finally {
       setLoading(false);
     }
@@ -36,26 +47,38 @@ export default function AdminVehiculesSection() {
     fetchData();
   }, []);
 
+  /**
+   * Supprime un véhicule après demande de confirmation.
+   */
   const handleDelete = async (id: number) => {
+    // Sécurité basique pour éviter les suppressions accidentelles
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce véhicule ?")) {
       try {
         await vehiculeService.deleteVehicule(id);
         setVehicules(prev => prev.filter(v => v.id !== id));
       } catch (error) {
-        console.error(error);
-        alert("Erreur lors de la suppression du véhicule.");
+        console.error("Erreur lors de la suppression :", error);
+        alert("Erreur lors de la suppression du véhicule (il est peut-être lié à une réservation).");
       }
     }
   };
 
+  /**
+   * Calcul des données à afficher.
+   */
   const filteredVehicules = vehicules
     .filter(v => {
+      //  Recherche full-text
       const searchString = `${v.marque} ${v.modele} ${v.immatriculation}`.toLowerCase();
       const matchesSearch = searchString.includes(searchTerm.toLowerCase());
+      
+      // Filtrage exact par statut
       const matchesStatut = filterStatut === 'all' || v.statut === filterStatut;
+      
       return matchesSearch && matchesStatut;
     })
     .sort((a, b) => {
+      // Tri final par prix 
       if (sortPrix === 'asc') return a.prix_jour - b.prix_jour;
       if (sortPrix === 'desc') return b.prix_jour - a.prix_jour;
       return 0;
@@ -63,6 +86,7 @@ export default function AdminVehiculesSection() {
 
   return (
     <section className="mb-12" aria-labelledby="admin-vehicules-title">
+      {/* En-tête  */}
       <div className="flex justify-between items-center mb-6">
         <h2 id="admin-vehicules-title" className="text-2xl font-bold text-gray-900 flex items-center">
           <Car className="mr-3 h-6 w-6 text-blue-600" aria-hidden="true" />
@@ -77,6 +101,7 @@ export default function AdminVehiculesSection() {
         </button>
       </div>
 
+      {/* *Recherche globale, Filtre par statut, Tri par prix */}
       <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4 shadow-sm flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -123,6 +148,7 @@ export default function AdminVehiculesSection() {
         </div>
       </div>
 
+      {/* Affichage du tableau de données */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         {loading ? (
           <div className="p-8 text-center text-gray-500" aria-live="polite">Chargement...</div>
@@ -141,7 +167,7 @@ export default function AdminVehiculesSection() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredVehicules.length === 0 ? (
-                  <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Aucun véhicule ne correspond.</td></tr>
+                  <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Aucun véhicule ne correspond aux critères de recherche.</td></tr>
                 ) : (
                   filteredVehicules.map((v) => (
                     <tr key={v.id} className="hover:bg-gray-50 transition-colors">
@@ -155,6 +181,7 @@ export default function AdminVehiculesSection() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {/* Bouton pour déclencher la modale en mode edit */}
                         <button 
                           onClick={() => { setVehiculeToEdit(v); setIsModalOpen(true); }} 
                           className="text-blue-600 hover:text-blue-900 mr-4"
@@ -162,6 +189,7 @@ export default function AdminVehiculesSection() {
                         >
                           <Edit className="h-5 w-5" aria-hidden="true" />
                         </button>
+                        {/* Bouton de suppression directe */}
                         <button 
                           onClick={() => handleDelete(v.id)} 
                           className="text-red-600 hover:text-red-900"
@@ -182,7 +210,7 @@ export default function AdminVehiculesSection() {
       <VehiculeFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchData}
+        onSuccess={fetchData} // Rechargement automatique de la liste après sauvegarde
         categories={categories}
         vehiculeToEdit={vehiculeToEdit}
       />

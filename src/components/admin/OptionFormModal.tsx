@@ -3,44 +3,63 @@ import { X } from 'lucide-react';
 import { optionsService } from '../../services/optionsService';
 import type { OptionSupp } from '../../types/database';
 
+/**
+ * Propriétés de la modale de gestion des options supplémentaires.
+ */
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  optionToEdit?: OptionSupp | null;
+  isOpen: boolean; // État de visibilité de la modale
+  onClose: () => void; // Callback pour fermer la fenêtre
+  onSuccess: () => void; // Callback pour rafraîchir la liste parente après validation
+  optionToEdit?: OptionSupp | null; // L'objet à éditer 
 }
 
+/**
+ * Modale contenant le formulaire pour les options (Siège bébé, GPS...).
+ */
 export default function OptionFormModal({ isOpen, onClose, onSuccess, optionToEdit }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // État local du formulaire (Controlled Component)
   const [formData, setFormData] = useState({
     libelle: '',
     prix_unitaire: ''
   });
 
+  /**
+   * Effet déclenché à l'ouverture : remplis les champs si on est en modification,
+   * sinon remet le formulaire à zéro pour une création propre.
+   */
   useEffect(() => {
     if (optionToEdit) {
       setFormData({
         libelle: optionToEdit.libelle,
-        prix_unitaire: optionToEdit.prix_unitaire.toString()
+        prix_unitaire: optionToEdit.prix_unitaire.toString() // Conversion en string pour l'input
       });
     } else {
       setFormData({ libelle: '', prix_unitaire: '' });
     }
   }, [optionToEdit, isOpen]);
 
+  /**
+   * Gestionnaire de saisie générique pour tous les inputs du formulaire.
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Soumet les données au service correspondant Création ou Mise à jour.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
+      // Préparation du Payload
       const payload = {
         libelle: formData.libelle,
-        prix_unitaire: parseFloat(formData.prix_unitaire)
+        prix_unitaire: parseFloat(formData.prix_unitaire) // Re-conversion en nombre
       };
 
       if (optionToEdit) {
@@ -48,10 +67,11 @@ export default function OptionFormModal({ isOpen, onClose, onSuccess, optionToEd
       } else {
         await optionsService.createOption(payload);
       }
+      
       onSuccess();
       onClose();
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de l'enregistrement de l'option :", error);
       alert("Erreur lors de l'enregistrement de l'option.");
     } finally {
       setIsSubmitting(false);
@@ -63,14 +83,14 @@ export default function OptionFormModal({ isOpen, onClose, onSuccess, optionToEd
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 px-4 py-8 overflow-y-auto"
-      onClick={onClose}
+      onClick={onClose} // Fermeture au clic sur le fond
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-option-title"
     >
       <div 
         className="relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6 my-auto"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()} // Empêche la fermeture au clic sur la modale
       >
         <div className="flex justify-between items-center mb-5">
           <h3 id="modal-option-title" className="text-lg font-bold text-gray-900">

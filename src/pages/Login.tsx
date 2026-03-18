@@ -3,6 +3,10 @@ import { supabase } from "../services/supabase";
 import { useNavigate, Link } from "react-router-dom";
 import { Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
 
+/**
+ * Page de connexion de l'application.
+ * Interagit avec Supabase Auth pour valider les identifiants et initialiser la session utilisateur.
+ */
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,9 +15,13 @@ export default function Login() {
 
   const navigate = useNavigate();
 
+  /**
+   * Traite la soumission du formulaire et gère le retour de l'API d'authentification.
+   */
   const handleLogin = async (e: React.SyntheticEvent) => {
     e.preventDefault();
 
+    // Validation basique côté client
     if (!email || !password) {
       setError("Veuillez remplir tous les champs.");
       return;
@@ -23,6 +31,7 @@ export default function Login() {
       setLoading(true);
       setError(null);
 
+      // Tentative de connexion via le service d'authentification
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -30,11 +39,13 @@ export default function Login() {
 
       if (authError) throw authError;
 
+      // Redirection vers l'accueil en cas de succès
       navigate("/");
     } catch (err) {
-      console.error(err);
+      console.error("Erreur d'authentification :", err);
       const errorMessage = err instanceof Error ? err.message : "Erreur de connexion.";
 
+      // Traduction de l'erreur générique de Supabase pour une meilleure expérience utilisateur
       if (errorMessage === "Invalid login credentials") {
         setError("Email ou mot de passe incorrect.");
       } else {

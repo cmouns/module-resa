@@ -1,6 +1,9 @@
 import { Car } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Pied de page de l'application
+ */
 export default function Footer() {
   return (
     <footer className="bg-gray-900 border-t border-gray-800">
@@ -14,11 +17,13 @@ export default function Footer() {
           
           <nav aria-label="Liens de pied de page" className="flex space-x-6 mb-4 md:mb-0">
             <Link to="/" className="text-gray-400 hover:text-white text-sm transition-colors">Accueil</Link>
+            {/* Lien obligatoire pour la conformité RGPD */}
             <Link to="/mentions-legales" className="text-gray-400 hover:text-white text-sm transition-colors">Mentions légales</Link>
             <Link to="/" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</Link>
           </nav>
 
           <div className="text-gray-400 text-sm text-center md:text-right">
+            {/* Mise à jour automatique de la date de CopyRight  */}
             <p>&copy; {new Date().getFullYear()} Espace Réservation.</p>
           </div>
           

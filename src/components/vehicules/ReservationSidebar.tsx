@@ -1,6 +1,10 @@
 import { CalendarDays, ChevronRight } from 'lucide-react';
 import type { Vehicule } from '../../types/database';
 
+/**
+ * Interface définissant les propriétés attendues par le composant.
+ * Toutes les données et fonctions de modification sont passées par le composant parent VehiculeDetail.
+ */
 interface Props {
   vehicule: Vehicule;
   dateDebut: string;
@@ -15,7 +19,24 @@ interface Props {
   isLoggedIn: boolean;
 }
 
-export default function ReservationSidebar({ vehicule, dateDebut, dateFin, setDateDebut, setDateFin, erreurDates, prixTotal, selectedOptionsCount, onReserve, isSubmitting, isLoggedIn }: Props) {
+/**
+ * Composant gérant la barre latérale de réservation.
+ * Il affiche les sélecteurs de date et le récapitulatif tarifaire, mais délègue
+ * la logique de calcul et de soumission au composant parent.
+ */
+export default function ReservationSidebar({ 
+  vehicule, 
+  dateDebut, 
+  dateFin, 
+  setDateDebut, 
+  setDateFin, 
+  erreurDates, 
+  prixTotal, 
+  selectedOptionsCount, 
+  onReserve, 
+  isSubmitting, 
+  isLoggedIn 
+}: Props) {
   return (
     <>
       <aside className="lg:w-2/5" aria-labelledby="sidebar-title">
@@ -32,6 +53,7 @@ export default function ReservationSidebar({ vehicule, dateDebut, dateFin, setDa
                  <input 
                   id="date_debut"
                   type="date" 
+                  // Empêche de sélectionner une date dans le passé
                   min={new Date().toISOString().split('T')[0]}
                   value={dateDebut}
                   onChange={(e) => setDateDebut(e.target.value)}
@@ -48,6 +70,7 @@ export default function ReservationSidebar({ vehicule, dateDebut, dateFin, setDa
                  <input 
                   id="date_fin"
                   type="date" 
+                  // La date de fin ne peut pas être antérieure à la date de début
                   min={dateDebut || new Date().toISOString().split('T')[0]}
                   value={dateFin}
                   onChange={(e) => setDateFin(e.target.value)}
@@ -56,7 +79,6 @@ export default function ReservationSidebar({ vehicule, dateDebut, dateFin, setDa
                  />
               </div>
             </div>
-
             {erreurDates && (
               <div className="bg-red-900/30 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm" role="alert">
                 {erreurDates}
@@ -78,7 +100,6 @@ export default function ReservationSidebar({ vehicule, dateDebut, dateFin, setDa
           </div>
         </div>
       </aside>
-
       <div className={`fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between z-40 transition-transform duration-500 ${dateDebut && dateFin ? 'translate-y-0' : 'translate-y-full'}`}>
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between px-4 lg:px-8">
           <div>

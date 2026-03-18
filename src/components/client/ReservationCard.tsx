@@ -34,17 +34,25 @@ export interface ReservationDetails {
 interface ReservationCardProps {
   reservation: ReservationDetails;
   optionsDispos: OptionSupp[];
+  // Rafraîchi la liste après modification
   onRefresh: () => void;
 }
 
+/**
+ * Composant affichant une réservation sous forme de carte interactive.
+ * Permet au client de modifier ou d'annuler 
+ * sa réservation directement depuis son tableau de bord
+ */
 export default function ReservationCard({ reservation, optionsDispos, onRefresh }: ReservationCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editDateDebut, setEditDateDebut] = useState('');
   const [editDateFin, setEditDateFin] = useState('');
   const [editSelectedOptions, setEditSelectedOptions] = useState<number[]>([]);
 
+  // Extraction sécurisée des données de la jointure Supabase (gère les cas Object ou Array)
   const vehicule = Array.isArray(reservation.vehicules) ? reservation.vehicules[0] : reservation.vehicules;
   
+  // Formatage des options choisies
   const optionsLibelles = reservation.reservation_options
     ?.map((ro) => {
       const opt = Array.isArray(ro.options_supp) ? ro.options_supp[0] : ro.options_supp;
@@ -62,10 +70,12 @@ export default function ReservationCard({ reservation, optionsDispos, onRefresh 
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
 
+    // Cohérence des dates
     if (end < start) {
       erreurDates = 'La date de retour doit être après le départ.';
       editNouveauPrix = 0;
     } else {
+      // Recalcul du prix en temps réel
       const diffTime = Math.abs(end.getTime() - start.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
 
@@ -78,18 +88,25 @@ export default function ReservationCard({ reservation, optionsDispos, onRefresh 
     }
   }
 
+  /**
+   * Annulation par le client 
+   */
   const handleAnnuler = async () => {
+    // Demande de confirmation avant une action destructrice
     if (window.confirm("Êtes-vous sûr de vouloir annuler cette réservation ?")) {
       try {
         await reservationService.updateReservationStatut(reservation.id, vehicule.id, 'annulee');
-        onRefresh();
+        onRefresh(); // On remonte l'info au parent pour recharger la liste
       } catch (error) {
-        console.error(error);
+        console.error("Erreur d'annulation :", error);
         alert("Erreur lors de l'annulation.");
       }
     }
   };
 
+  /**
+   * Bascule la carte en mode édition et pré-remplit les champs avec les données actuelles.
+   */
   const startEditing = () => {
     setIsEditing(true);
     setEditDateDebut(reservation.date_debut);
@@ -104,10 +121,14 @@ export default function ReservationCard({ reservation, optionsDispos, onRefresh 
     );
   };
 
+  /**
+   * Valide les modifications apportées par le client.
+   */
   const handleSaveEdit = async () => {
     if (erreurDates || editNouveauPrix === 0) return;
 
     try {
+      // S'assure que le véhicule est toujours libre sur les nouvelles dates
       const estDispo = await reservationService.checkDisponibiliteUpdate(vehicule.id, editDateDebut, editDateFin, reservation.id);
       
       if (!estDispo) {
@@ -115,13 +136,14 @@ export default function ReservationCard({ reservation, optionsDispos, onRefresh 
         return;
       }
 
+      //  Application de la mise à jour 
       await reservationService.updateReservationComplete(reservation.id, editDateDebut, editDateFin, editNouveauPrix, editSelectedOptions);
       
       setIsEditing(false);
-      onRefresh();
+      onRefresh(); // Rafraîchissement global
       alert("Réservation modifiée avec succès !");
     } catch (error) {
-      console.error(error);
+      console.error("Erreur de modification :", error);
       alert("Erreur lors de la modification.");
     }
   };
@@ -237,6 +259,7 @@ export default function ReservationCard({ reservation, optionsDispos, onRefresh 
             </div>
           </div>
 
+          {/* Affichage conditionnel des actions en fonction de l'état "isEditing" */}
           {isEditing && (
             <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
               <button 
@@ -257,6 +280,7 @@ export default function ReservationCard({ reservation, optionsDispos, onRefresh 
             </div>
           )}
 
+          {/* Les actions classiques ne sont visibles que si la réservation n'est pas déjà annulée ou terminée */}
           {(reservation.statut === 'attente' || reservation.statut === 'validee') && !isEditing && (
             <div className="mt-6 border-t border-gray-100 pt-4 flex gap-6 justify-end">
               <button

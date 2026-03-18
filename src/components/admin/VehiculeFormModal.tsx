@@ -3,16 +3,23 @@ import { X } from 'lucide-react';
 import { vehiculeService } from '../../services/vehiculesService';
 import type { Categorie, Vehicule, StatutVehicule } from '../../types/database';
 
+/**
+ * Propriétés de la modale de gestion des véhicules.
+ */
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  categories: Categorie[];
-  vehiculeToEdit?: Vehicule | null;
+  isOpen: boolean; // Gère l'affichage de la modale
+  onClose: () => void; // Fonction pour fermer la modale
+  onSuccess: () => void; // Fonction pour rafraîchir la liste parente après le succès de l'action
+  categories: Categorie[]; // Liste des catégories pour le menu déroulant
+  vehiculeToEdit?: Vehicule | null; // Si présent, la modale passe en mode "Édition"
 }
 
+/**
+ * Modale contenant le formulaire d'ajout ou de modification d'un véhicule.
+ */
 export default function VehiculeFormModal({ isOpen, onClose, onSuccess, categories, vehiculeToEdit }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     marque: '',
     modele: '',
@@ -23,6 +30,10 @@ export default function VehiculeFormModal({ isOpen, onClose, onSuccess, categori
     image_url: ''
   });
 
+  /**
+   * Effet déclenché à l'ouverture de la modale ou au changement du véhicule à éditer.
+   * Pré-remplit le formulaire si on est en mode Édition sinon le réinitialise à zéro.
+   */
   useEffect(() => {
     if (vehiculeToEdit) {
       setFormData({
@@ -35,20 +46,28 @@ export default function VehiculeFormModal({ isOpen, onClose, onSuccess, categori
         image_url: vehiculeToEdit.image_url || ''
       });
     } else {
+      // Reset complet pour une nouvelle création
       setFormData({ marque: '', modele: '', immatriculation: '', prix_jour: '', statut: 'disponible', id_categorie: '', image_url: '' });
     }
   }, [vehiculeToEdit, isOpen]);
 
+  /**
+   * Gestionnaire d'événement générique pour tous les champs de saisie input et select.
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Valide le formulaire et envoie les données à Supabase.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
+      // Formatage des données pour correspondre aux types stricts de la base de données
       const payload = {
         marque: formData.marque,
         modele: formData.modele,
@@ -64,10 +83,12 @@ export default function VehiculeFormModal({ isOpen, onClose, onSuccess, categori
       } else {
         await vehiculeService.createVehicule(payload);
       }
+      
+      // Si succes, ça avertit le composant parent et on ferme la modale
       onSuccess();
       onClose();
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de la soumission du formulaire :", error);
       alert("Erreur lors de l'enregistrement du véhicule.");
     } finally {
       setIsSubmitting(false);
@@ -79,6 +100,7 @@ export default function VehiculeFormModal({ isOpen, onClose, onSuccess, categori
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 px-4 py-8 overflow-y-auto"
+      // Permet de fermer la modale en cliquant sur l'arrière-plan
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -86,10 +108,12 @@ export default function VehiculeFormModal({ isOpen, onClose, onSuccess, categori
     >
       <div
         className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl p-6 my-auto"
+        // Empêche le clic sur la modale elle-même de déclencher la fermeture
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-5">
           <h3 id="modal-title" className="text-lg font-bold text-gray-900">
+            {/* Rendu conditionnel du titre selon le mode */}
             {vehiculeToEdit ? 'Modifier le véhicule' : 'Ajouter un véhicule'}
           </h3>
           <button 

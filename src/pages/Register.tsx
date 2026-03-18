@@ -3,6 +3,10 @@ import { supabase } from "../services/supabase";
 import { useNavigate, Link } from "react-router-dom";
 import { Lock, Mail, User, AlertCircle, Loader2 } from "lucide-react";
 
+/**
+ * Page d'inscription pour les nouveaux utilisateurs.
+ * Gère la création des identifiants et l'enregistrement des données personnelles.
+ */
 export default function Register() {
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
@@ -15,9 +19,13 @@ export default function Register() {
 
   const navigate = useNavigate();
 
+  /**
+   * Traite la soumission du formulaire d'inscription.
+   */
   const handleRegister = async (e: React.SyntheticEvent) => {
     e.preventDefault();
 
+    // Validation basique côté front-end
     if (!nom || !prenom || !email || !password) {
       setError("Veuillez remplir tous les champs.");
       return;
@@ -28,6 +36,8 @@ export default function Register() {
       return;
     }
 
+    // TODO  : Il faudrait enregistrer la valeur 
+    // et l'horodatage de ce consentement directement dans la base de données.
     if (!rgpdConsent) {
       setError("Vous devez accepter les conditions d'utilisation et la politique de confidentialité.");
       return;
@@ -37,6 +47,7 @@ export default function Register() {
       setLoading(true);
       setError(null);
 
+      // Création sécurisée du compte dans le service d'authentification Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -48,6 +59,7 @@ export default function Register() {
         throw new Error("Erreur inattendue lors de la création du compte.");
       }
 
+      //  Insertion des informations complémentaires dans la table publique "profils"
       const { error: dbError } = await supabase.from("profils").insert([
         {
           id: authData.user.id,
@@ -63,11 +75,13 @@ export default function Register() {
         throw new Error("Erreur lors de l'enregistrement du profil.");
       }
 
+      // Redirection vers l'accueil une fois l'inscription terminée
       navigate("/");
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'inscription.";
 
+      // Personnalisation du message d'erreur pour l'utilisateur
       if (errorMessage === "User already registered") {
         setError("Cet email est déjà utilisé.");
       } else {
@@ -95,8 +109,8 @@ export default function Register() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-md flex items-start">
-              <AlertCircle className="h-5 w-5 text-red-400 mr-2 shrink-0" />
+            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-md flex items-start" role="alert">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2 shrink-0" aria-hidden="true" />
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
@@ -106,7 +120,7 @@ export default function Register() {
               <label htmlFor="nom" className="block text-sm font-medium text-gray-700">Nom</label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
                   id="nom"
@@ -125,7 +139,7 @@ export default function Register() {
               <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">Prénom</label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
                   id="prenom"
@@ -144,7 +158,7 @@ export default function Register() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">Adresse email</label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
                   id="email"
@@ -164,7 +178,7 @@ export default function Register() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">Mot de passe</label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
                   id="password"
@@ -209,7 +223,7 @@ export default function Register() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" aria-hidden="true" />
                     Inscription en cours...
                   </>
                 ) : (

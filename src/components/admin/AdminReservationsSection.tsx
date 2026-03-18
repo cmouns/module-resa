@@ -25,20 +25,28 @@ interface AdminReservation {
   vehicules: VehiculeInfo | VehiculeInfo[];
 }
 
+/**
+ * Section d'administration dédiée au suivi et à la gestion des réservations.
+ * Gère le cycle de vie complet d'une réservation : Attente -> Validation -> Terminée (ou Annulée).
+ */
 export default function AdminReservationsSection() {
   const [reservations, setReservations] = useState<AdminReservation[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // États pour la barre de recherche et le filtrage rapide
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatut, setFilterStatut] = useState('all');
 
+  /**
+   * Récupère l'historique complet de toutes les réservations du système.
+   */
   const fetchReservations = async () => {
     try {
       setLoading(true);
       const data = await reservationService.getAllReservations();
       setReservations(data as AdminReservation[]);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de la récupération des réservations :", error);
     } finally {
       setLoading(false);
     }
@@ -48,18 +56,28 @@ export default function AdminReservationsSection() {
     fetchReservations();
   }, []);
 
+  /**
+   * Fait avancer le statut d'une réservation dans son cycle de vie.
+   * @param idResa L'ID de la réservation.
+   * @param idVehicule L'ID du véhicule.
+   * @param newStatut Le nouveau statut à appliquer.
+   */
   const handleStatutChange = async (idResa: number, idVehicule: number, newStatut: 'attente' | 'validee' | 'terminee' | 'annulee') => {
     if (window.confirm(`Confirmez-vous le passage au statut "${newStatut}" ?`)) {
       try {
         await reservationService.updateReservationStatut(idResa, idVehicule, newStatut);
-        fetchReservations();
+        fetchReservations(); // Rafraîchissement complet pour afficher le nouveau statut
       } catch (error) {
-        console.error(error);
+        console.error("Erreur de mise à jour du statut :", error);
         alert("Erreur lors de la mise à jour en base de données.");
       }
     }
   };
 
+  /**
+   * Filtrage multi-critères.
+   * Concatène de multiples champs pour permettre une recherche globale très fluide.
+   */
   const filteredReservations = reservations.filter(resa => {
     const client = Array.isArray(resa.profils) ? resa.profils[0] : resa.profils;
     const vehicule = Array.isArray(resa.vehicules) ? resa.vehicules[0] : resa.vehicules;
@@ -81,6 +99,7 @@ export default function AdminReservationsSection() {
         </h2>
       </div>
 
+      {/* Barre d'outils de recherche */}
       <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4 shadow-sm flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -168,6 +187,7 @@ export default function AdminReservationsSection() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {/* On ne peut valider/refuser qu'une réservation "en attente" */}
                           {resa.statut === 'attente' && (
                             <div className="flex justify-end gap-3">
                               <button onClick={() => handleStatutChange(resa.id, resa.id_vehicule, 'validee')} className="text-green-600 hover:text-green-900" aria-label={`Valider la réservation ${resa.id}`}>
@@ -178,6 +198,7 @@ export default function AdminReservationsSection() {
                               </button>
                             </div>
                           )}
+                          {/* On ne peut terminer qu'une réservation "validée" */}
                           {resa.statut === 'validee' && (
                             <button 
                               onClick={() => handleStatutChange(resa.id, resa.id_vehicule, 'terminee')} 

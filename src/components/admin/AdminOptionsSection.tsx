@@ -4,19 +4,27 @@ import { optionsService } from '../../services/optionsService';
 import type { OptionSupp } from '../../types/database';
 import OptionFormModal from './OptionFormModal';
 
+/**
+ * Section d'administration permettant la gestion du catalogue d'options supplémentaires (Sièges, GPS...).
+ */
 export default function AdminOptionsSection() {
   const [options, setOptions] = useState<OptionSupp[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // États de gestion de la modale d'édition
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [optionToEdit, setOptionToEdit] = useState<OptionSupp | null>(null);
 
+  /**
+   * Récupère la liste à jour des options depuis Supabase.
+   */
   const fetchOptions = async () => {
     try {
       setLoading(true);
       const data = await optionsService.getOptions();
       setOptions(data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur de récupération des options :", error);
     } finally {
       setLoading(false);
     }
@@ -26,14 +34,18 @@ export default function AdminOptionsSection() {
     fetchOptions();
   }, []);
 
+  /**
+   * Gère la suppression d'une option
+   */
   const handleDelete = async (id: number) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette option ?")) {
       try {
         await optionsService.deleteOption(id);
+        // On met à jour l'état local immédiatement sans recharger la page
         setOptions(prev => prev.filter(o => o.id !== id));
       } catch (error) {
-        console.error(error);
-        alert("Erreur lors de la suppression de l'option.");
+        console.error("Erreur de suppression :", error);
+        alert("Erreur lors de la suppression de l'option (elle est peut-être liée à une réservation).");
       }
     }
   };
@@ -45,6 +57,7 @@ export default function AdminOptionsSection() {
           <Shield className="mr-3 h-6 w-6 text-blue-600" aria-hidden="true" />
           Gestion des Options & Services
         </h2>
+        {/* Bouton ouvrant la modale en mode création */}
         <button 
           onClick={() => { setOptionToEdit(null); setIsModalOpen(true); }}
           className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
@@ -76,6 +89,7 @@ export default function AdminOptionsSection() {
                       <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{o.libelle}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{o.prix_unitaire} €</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {/* Bouton ouvrant la modale en mode edit */}
                         <button 
                           onClick={() => { setOptionToEdit(o); setIsModalOpen(true); }} 
                           className="text-blue-600 hover:text-blue-900 mr-4"
