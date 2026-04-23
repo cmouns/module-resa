@@ -14,101 +14,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    /**
-     * Vérifie s'il existe déjà une session active au lancement de l'application
-     */
-    const initializeAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-
-        // Si la session est invalide ou expirée, on purge tout par sécurité
-        if (error || !data.session) {
-          await supabase.auth.signOut().catch(() => {});
-          localStorage.clear();
-          setUser(null);
-          setProfil(null);
-          setLoading(false);
-          return;
-        }
-
-        setUser(data.session.user);
-
-        // Récupération des informations complémentaires du profil
-        const { data: profilData, error: profilError } = await supabase
-          .from('profils')
-          .select('*')
-          .eq('id', data.session.user.id)
-          .single();
-
-        if (profilData && !profilError) {
-          setProfil(profilData as Profil);
-        } else {
-          setProfil(null);
-        }
-
-      } catch (error) {
-        console.error("Erreur d'initialisation auth:", error);
-        localStorage.clear();
-        setUser(null);
-        setProfil(null);
-      } finally {
-        setLoading(false); 
-      }
-    };
-
-    initializeAuth();
-
-    /**
-     * Mise en place d'un Listener Supabase.
-     * Intercepte en temps réel les changements d'état par exemple si l'utilisateur se déconnecte depuis un autre onglet.
-     */
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        localStorage.clear();
+    // Un seul point d'entrée : on écoute les changements d'état auth.
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      
+      // Cas 1 : pas de session (déconnecté ou jamais connecté)
+      if (!session) {
         setUser(null);
         setProfil(null);
         setLoading(false);
         return;
       }
 
+      // session active, on met à jour le user et on cherche le profil
       setUser(session.user);
 
       try {
-        const { data: profilData } = await supabase
+        const { data: profilData, error } = await supabase
           .from('profils')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
-        setProfil((profilData as Profil) || null);
-      } catch (error) {
-        console.error("Erreur changement auth:", error);
+        if (error) {
+          console.error("Erreur récupération profil :", error);
+          setProfil(null);
+        } else {
+          setProfil(profilData as Profil);
+        }
+      } catch (err) {
+        console.error("Erreur inattendue :", err);
         setProfil(null);
       } finally {
         setLoading(false);
       }
     });
 
-    // Évite les fuites de mémoire en coupant l'écouteur.
+    // On coupe l'écouteur quand le composant disparaît
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
 
   /**
-   * Déconnecte l'utilisateur proprement en détruisant la session côté serveur
-   * et en nettoyant les états et le cache côté client.
+   * Déconnecte l'utilisateur proprement.
    */
   const logout = async () => {
-    await supabase.auth.signOut().catch(() => {});
-    localStorage.clear();
-    setUser(null);
-    setProfil(null);
+    await supabase.auth.signOut();
   };
 
   return (
     <AuthContext.Provider value={{ user, profil, loading, logout }}>
-      {/* Empêche l'affichage de l'application tant que la session n'est pas vérifiée */}
       {loading ? (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50" aria-busy="true">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>

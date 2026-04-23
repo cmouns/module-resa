@@ -2,6 +2,7 @@ name: Keep Supabase Alive
 
 on:
   schedule:
+    # Tous les 3 jours à minuit
     - cron: '0 0 */3 * *'
   workflow_dispatch:
 
@@ -9,18 +10,18 @@ jobs:
   ping-database:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping de la table vehicules via l'API REST Supabase
+      - name: Ping Supabase via l'API REST
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-          "${{ secrets.SUPABASE_URL }}/rest/v1/vehicules?limit=1")
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/vehicules?limit=1")
           
-          echo "Statut de la requête : $HTTP_STATUS"
+          echo "Code HTTP reçu : $HTTP_STATUS"
           
           if [ "$HTTP_STATUS" -ne 200 ]; then
             echo "Erreur lors du ping de Supabase."
             exit 1
-          else
-            echo "Ping réussi, le projet reste actif !"
           fi
+          
+          echo "Ping réussi, projet maintenu actif."

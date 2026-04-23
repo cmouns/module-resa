@@ -1,32 +1,46 @@
-# 🚗 Projet de Location de Véhicules
+# Projet de location de véhicules — Module réservation
 
-**🚀 Application en ligne :** [Tester le projet en production](https://module-resav1-lbjs4l413-cmouns-projects.vercel.app/)
+Application web de réservation de véhicules développée dans le cadre du BTS SIO (option SLAM).
 
-Bonjour ! Bienvenue sur le repo de mon projet de certification. Je m'appelle Mounir SEBTI et j'ai développé cette application web dans le cadre de mon BTS SIO (option SLAM) et de ma formation CDA à l'AFPA.
+**Démo en ligne :** https://module-resav1-lbjs4l413-cmouns-projects.vercel.app/
 
-L'idée de base, c'était de coder une plateforme de réservation de A à Z, en me mettant dans la peau d'un développeur full-stack, avec une vraie gestion de base de données et un déploiement continu.
+## Fonctionnalités
 
-## 💡 Ce que fait l'appli
+**Espace client**
+- Catalogue des véhicules disponibles (filtré en temps réel selon le statut)
+- Configuration d'une réservation : dates, options supplémentaires, calcul du prix
+- Tableau de bord pour consulter, modifier ou annuler ses réservations
 
-J'ai séparé le projet en deux vrais espaces :
-- **L'Espace Client :** L'utilisateur arrive sur un catalogue dynamique (les voitures déjà louées ou en panne n'apparaissent pas, c'est géré en direct). Il peut choisir ses dates, cocher des options (siège bébé, GPS...), et l'algorithme calcule le prix total. Il a ensuite accès à un dashboard pour gérer, modifier les dates ou annuler ses réservations.
-- **Le Back-Office Admin :** L'administrateur gère sa flotte et valide ou termine les locations. Si une résa est annulée ou terminée, le statut de la voiture repasse automatiquement en "disponible" dans la base.
+**Back-office administrateur**
+- Gestion du parc de véhicules (CRUD)
+- Gestion des catégories et des options supplémentaires
+- Suivi des réservations et validation du cycle de vie (attente → validée → terminée)
 
-## 🛠️ La stack technique (et pourquoi je l'ai choisie)
+## Stack technique
 
-Je voulais utiliser des technos modernes pour être raccord avec les attentes du marché du travail :
-- **Front :** React avec TypeScript. Le typage fort de TS m'a sauvé de pas mal de bugs bêtes pendant le développement. Pour le style, j'ai utilisé Tailwind CSS pour faire une interface propre sans me perdre dans des fichiers CSS à rallonge.
-- **Back / BDD :** J'ai utilisé Supabase (qui tourne sous PostgreSQL). Tout est sécurisé directement dans la base de données avec des règles RLS (Row Level Security). Comme ça, je suis sûr à 100 % qu'un client ne peut pas bidouiller et modifier la réservation d'un autre.
-- **Qualité :** J'ai mis en place Vitest pour tester mon algorithme de calcul de prix et m'assurer que les edge cases (comme des dates inversées) sont bien bloqués.
-- **Déploiement (CI/CD) :** L'application est hébergée sur **Vercel**, relié directement à ce dépôt GitHub. À chaque `push` sur la branche `main`, le site est recompilé et mis en ligne automatiquement. Mes clés d'API sont protégées via les variables d'environnement de Vercel.
+- **Front** : React 19, TypeScript, Tailwind CSS, Vite
+- **Backend** : Supabase (PostgreSQL, Auth, Row Level Security)
+- **Tests** : Vitest (algorithme de calcul de prix)
+- **CI/CD** : Déploiement automatique via Vercel, workflow GitHub Actions pour maintenir la base active
 
-## ⚙️ Comment lancer le projet en local ?
+## Installation locale
 
-Si vous voulez cloner le projet et tester la bête sur votre machine :
+```bash
+npm install
+```
 
-1. Clonez ce repository.
-2. Installez les dépendances avec un petit `npm install`.
-3. Créez un fichier `.env` à la racine et glissez-y les clés Supabase :
-   `VITE_SUPABASE_URL=votre_url`
-   `VITE_SUPABASE_ANON_KEY=votre_cle`
-4. Lancez `npm run dev` et c'est parti !
+Créer un fichier `.env` à la racine :
+VITE_SUPABASE_URL=votre_url
+VITE_SUPABASE_ANON_KEY=votre_cle
+
+Puis :
+
+```bash
+npm run dev
+```
+
+## Tests
+
+```bash
+npm run test
+```

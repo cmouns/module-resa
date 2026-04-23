@@ -36,10 +36,12 @@ export default function Register() {
       return;
     }
 
-    // TODO  : Il faudrait enregistrer la valeur 
+    // TODO : Il faudrait enregistrer la valeur
     // et l'horodatage de ce consentement directement dans la base de données.
     if (!rgpdConsent) {
-      setError("Vous devez accepter les conditions d'utilisation et la politique de confidentialité.");
+      setError(
+        "Vous devez accepter les conditions d'utilisation et la politique de confidentialité.",
+      );
       return;
     }
 
@@ -47,7 +49,7 @@ export default function Register() {
       setLoading(true);
       setError(null);
 
-      // Création sécurisée du compte dans le service d'authentification Supabase
+      // Création du compte Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -59,7 +61,7 @@ export default function Register() {
         throw new Error("Erreur inattendue lors de la création du compte.");
       }
 
-      //  Insertion des informations complémentaires dans la table publique "profils"
+      // Insertion du profil métier
       const { error: dbError } = await supabase.from("profils").insert([
         {
           id: authData.user.id,
@@ -71,15 +73,18 @@ export default function Register() {
       ]);
 
       if (dbError) {
-        console.error(dbError);
-        throw new Error("Erreur lors de l'enregistrement du profil.");
+        // Si l'insert échoue, on déconnecte pour éviter un état incohérent
+        await supabase.auth.signOut();
+        console.error("Erreur insertion profil :", dbError);
+        throw new Error(
+          "Erreur lors de l'enregistrement du profil. Veuillez réessayer.",
+        );
       }
-
-      // Redirection vers l'accueil une fois l'inscription terminée
       navigate("/");
     } catch (err) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'inscription.";
+      const errorMessage =
+        err instanceof Error ? err.message : "Erreur lors de l'inscription.";
 
       // Personnalisation du message d'erreur pour l'utilisateur
       if (errorMessage === "User already registered") {
@@ -100,7 +105,10 @@ export default function Register() {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Ou{" "}
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link
+            to="/login"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
             connectez-vous à votre compte
           </Link>
         </p>
@@ -109,15 +117,26 @@ export default function Register() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-md flex items-start" role="alert">
-              <AlertCircle className="h-5 w-5 text-red-400 mr-2 shrink-0" aria-hidden="true" />
+            <div
+              className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-md flex items-start"
+              role="alert"
+            >
+              <AlertCircle
+                className="h-5 w-5 text-red-400 mr-2 shrink-0"
+                aria-hidden="true"
+              />
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleRegister}>
             <div>
-              <label htmlFor="nom" className="block text-sm font-medium text-gray-700">Nom</label>
+              <label
+                htmlFor="nom"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Nom
+              </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -136,7 +155,12 @@ export default function Register() {
             </div>
 
             <div>
-              <label htmlFor="prenom" className="block text-sm font-medium text-gray-700">Prénom</label>
+              <label
+                htmlFor="prenom"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Prénom
+              </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -155,7 +179,12 @@ export default function Register() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Adresse email</label>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Adresse email
+              </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -175,7 +204,12 @@ export default function Register() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Mot de passe</label>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Mot de passe
+              </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -207,8 +241,12 @@ export default function Register() {
                 />
               </div>
               <div className="ml-3 text-sm">
-                <label htmlFor="rgpd" className="font-medium text-gray-700 cursor-pointer">
-                  J'accepte que mes données soient traitées dans le cadre de la location de véhicules.
+                <label
+                  htmlFor="rgpd"
+                  className="font-medium text-gray-700 cursor-pointer"
+                >
+                  J'accepte que mes données soient traitées dans le cadre de la
+                  location de véhicules.
                 </label>
               </div>
             </div>
@@ -223,7 +261,10 @@ export default function Register() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" aria-hidden="true" />
+                    <Loader2
+                      className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                      aria-hidden="true"
+                    />
                     Inscription en cours...
                   </>
                 ) : (
